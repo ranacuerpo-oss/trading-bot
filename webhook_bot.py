@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from dotenv import load_dotenv
 import os
 import csv
@@ -17,6 +17,9 @@ MAX_USDT_PER_TRADE = float(os.getenv("MAX_USDT_PER_TRADE", "100"))
 COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", "900"))
 MAX_TRADES_PER_DAY = int(os.getenv("MAX_TRADES_PER_DAY", "10"))
 
+DATA_DIR = os.getenv("DATA_DIR", "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+
 balance = PAPER_BALANCE
 position_size = 0.0
 entry_price = 0.0
@@ -26,8 +29,14 @@ last_trade_at = None
 trades_today = 0
 current_day = datetime.now(timezone.utc).date()
 
-CSV_FILE = "trades.csv"
-STATE_FILE = os.getenv("STATE_FILE", "bot_state.json")
+CSV_FILE = os.path.join(DATA_DIR, "trades.csv")
+
+STATE_FILE_ENV = os.getenv("STATE_FILE")
+if STATE_FILE_ENV:
+    # If it's a filename only, store it inside DATA_DIR. If it's an absolute path, use it as-is.
+    STATE_FILE = STATE_FILE_ENV if os.path.isabs(STATE_FILE_ENV) else os.path.join(DATA_DIR, STATE_FILE_ENV)
+else:
+    STATE_FILE = os.path.join(DATA_DIR, "bot_state.json")
 
 def init_csv():
     if not os.path.exists(CSV_FILE):
@@ -247,8 +256,18 @@ def status():
         "state_file": STATE_FILE
     })
 
+@app.route("/trades", methods=["GET"])
+def trades_download():
+    if not os.path.exists(CSV_FILE):
+        return jsonify({"ok": False, "error": "trades.csv no existe aun"}), 404
+    return send_file(
+        CSV_FILE,
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="trades.csv",
+    )
+
 if __name__ == "__main__":
     init_csv()
     load_state()
-    port = int(os.getenv("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
