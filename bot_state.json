@@ -1,0 +1,10 @@
+{
+  "balance": 100000.0,
+  "position_size": 0.0,
+  "entry_price": 0.0,
+  "last_signal": "sell",
+  "last_signal_at": "2026-04-29T05:53:04.065477+00:00",
+  "last_trade_at": "2026-04-29T05:53:04.065477+00:00",
+  "trades_today": 2,
+  "current_day": "2026-04-29"
+}
